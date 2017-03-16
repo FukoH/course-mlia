@@ -141,18 +141,14 @@ def handwritingClassTest():
 
 
 PCA_COMPONENTS = 100
+DIGIT_RECOGNIZER_TRAIN_FILE = "/Users/liminghao/Downloads/train.csv"
+DIGIT_RECOGNIZER_TEST_FILE = "/Users/liminghao/Downloads/test.csv"
 def digitRecognizerTestFast():
     ## load train data
-    train_data = pd.read_csv("/Users/liminghao/Downloads/train.csv")
+    train_data = pd.read_csv(DIGIT_RECOGNIZER_TRAIN_FILE)
     features_train = train_data.columns[1:]
     X_train = train_data[features_train]
     y_train = train_data['label']
-
-    ##load test data
-    # test_data = pd.read_csv("/Users/liminghao/Downloads/test.csv")
-    # features_test = test_data.columns[1:]
-    # X_test = test_data[features_test]
-    # y_test = test_data['label']
 
     ## split train data into parts of train and test
     X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=0)
@@ -203,7 +199,7 @@ def digitRecognizerTestFast():
 
 def digitRecognizerForKaggle():
     ## load train data
-    train_data = pd.read_csv("/Users/liminghao/Downloads/train.csv")
+    train_data = pd.read_csv(DIGIT_RECOGNIZER_TRAIN_FILE)
     features_train = train_data.columns[1:]
     X_train = train_data[features_train]
     y_train = train_data['label']
@@ -211,7 +207,7 @@ def digitRecognizerForKaggle():
 
 
     ## load test data
-    test_data = pd.read_csv("/Users/liminghao/Downloads/test.csv")
+    test_data = pd.read_csv(DIGIT_RECOGNIZER_TEST_FILE)
     features_test = test_data.columns[0:]
     X_test = test_data[features_test]
 
@@ -242,14 +238,14 @@ def digitRecognizerForKaggle():
 
 def digitRecognizerTest():
     ## load train data
-    train_data = pd.read_csv("/Users/liminghao/Downloads/train.csv")
+    train_data = pd.read_csv(DIGIT_RECOGNIZER_TRAIN_FILE)
     train_data = shuffle(train_data)[:10000] # select 10000 data to test digit recognizer
     features_train = train_data.columns[1:]
     X_train = train_data[features_train]
     y_train = train_data['label']
 
     ##load test data
-    # test_data = pd.read_csv("/Users/liminghao/Downloads/test.csv")
+    # test_data = pd.read_csv(DIGIT_RECOGNIZER_TEST_FILE)
     # features_test = test_data.columns[1:]
     # X_test = test_data[features_test]
     # y_test = test_data['label']
