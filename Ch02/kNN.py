@@ -11,9 +11,23 @@ Output:     the most popular class label
 
 @author: pbharrin
 '''
+
 from numpy import *
 import operator
 from os import listdir
+
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.cross_validation import train_test_split
+from sklearn import decomposition, metrics
+import time
+
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
+import csv
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.utils import shuffle
 
 def classify0(inX, dataSet, labels, k):
     dataSetSize = dataSet.shape[0]
@@ -124,3 +138,183 @@ def handwritingClassTest():
         if (classifierResult != classNumStr): errorCount += 1.0
     print "\nthe total number of errors is: %d" % errorCount
     print "\nthe total error rate is: %f" % (errorCount/float(mTest))
+
+
+PCA_COMPONENTS = 100
+def digitRecognizerTestFast():
+    ## load train data
+    train_data = pd.read_csv("/Users/liminghao/Downloads/train.csv")
+    features_train = train_data.columns[1:]
+    X_train = train_data[features_train]
+    y_train = train_data['label']
+
+    ##load test data
+    # test_data = pd.read_csv("/Users/liminghao/Downloads/test.csv")
+    # features_test = test_data.columns[1:]
+    # X_test = test_data[features_test]
+    # y_test = test_data['label']
+
+    ## split train data into parts of train and test
+    X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=0)
+    y_train = y_train.values
+    y_test = y_test.values
+
+    ## pca decomposition
+    pca = decomposition.PCA(n_components=PCA_COMPONENTS).fit(X_train)
+    X_train_reduced = pca.transform(X_train)
+
+    values_dict = {}
+    accuracy_dict = {}
+
+    # for k in [3, 5, 10, 20]:
+    for k in [3]:
+        start_time = time.time()
+        print "FOR K= ", k
+        clf = KNeighborsClassifier(k)
+        clf.fit(X_train_reduced, y_train)
+
+        X_test_reduced = pca.transform(X_test)
+
+        y_pred = clf.predict(X_test_reduced)
+
+        values_dict[k] = y_pred
+
+        print classification_report(y_test, y_pred)
+        print("Confusion matrix:\n%s" % metrics.confusion_matrix(y_test, y_pred))
+
+        acc = accuracy_score(y_test, y_pred)
+        accuracy_dict[k] = acc
+
+        print("\n")
+        print("Accuracy:%f" % (acc * 100))
+
+        print("Runtime:")
+        print round((time.time() - start_time), 2), " seconds"
+
+    max_key = max(accuracy_dict, key=accuracy_dict.get)
+
+    with open('KNN_results.csv', 'w')as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerow(["ImageID", "Label"])
+        i = 1
+        for v in values_dict[max_key]:
+            writer.writerow([i, v])
+            i += 1
+
+def digitRecognizerForKaggle():
+    ## load train data
+    train_data = pd.read_csv("/Users/liminghao/Downloads/train.csv")
+    features_train = train_data.columns[1:]
+    X_train = train_data[features_train]
+    y_train = train_data['label']
+    y_train = y_train.values
+
+
+    ## load test data
+    test_data = pd.read_csv("/Users/liminghao/Downloads/test.csv")
+    features_test = test_data.columns[0:]
+    X_test = test_data[features_test]
+
+    ## pca decomposition
+    pca = decomposition.PCA(n_components=PCA_COMPONENTS).fit(X_train)
+    X_train_reduced = pca.transform(X_train)
+
+    # for k in [3, 5, 10, 20]:
+    for k in [3]:
+        start_time = time.time()
+        print "FOR K= ", k
+        clf = KNeighborsClassifier(k)
+        clf.fit(X_train_reduced, y_train)
+
+        # X_test_reduced = pca.transform(X_test)[:1000]
+        X_test_reduced = pca.transform(X_test)
+        print "Start testing %d samples" % X_test_reduced.shape[0]
+        y_pred = clf.predict(X_test_reduced)
+
+        with open('KNN_%d_kaggle_results.csv' % k , 'w')as f:
+            writer = csv.writer(f, lineterminator='\n')
+            writer.writerow(["ImageID", "Label"])
+            for i, v in enumerate(y_pred):
+                writer.writerow([i+1, v])
+
+        print("Runtime:")
+        print round((time.time() - start_time), 2), " seconds"
+
+def digitRecognizerTest():
+    ## load train data
+    train_data = pd.read_csv("/Users/liminghao/Downloads/train.csv")
+    train_data = shuffle(train_data)[:10000] # select 10000 data to test digit recognizer
+    features_train = train_data.columns[1:]
+    X_train = train_data[features_train]
+    y_train = train_data['label']
+
+    ##load test data
+    # test_data = pd.read_csv("/Users/liminghao/Downloads/test.csv")
+    # features_test = test_data.columns[1:]
+    # X_test = test_data[features_test]
+    # y_test = test_data['label']
+
+    ## split train data into parts of train and test
+    X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=0)
+    y_train = y_train.values
+    y_test = y_test.values
+
+    ## pca decomposition
+    pca = decomposition.PCA(n_components=PCA_COMPONENTS).fit(X_train)
+    X_train_reduced = pca.transform(X_train)
+
+    values_dict = {}
+    accuracy_dict = {}
+
+    # for k in [3, 5, 10, 20]:
+    for k in [3]:
+        start_time = time.time()
+        print "FOR K= ", k
+        # clf = KNeighborsClassifier(k)
+        # clf.fit(X_train_reduced, y_train)
+
+        X_test_reduced = pca.transform(X_test)
+
+        y_pred = []
+        for j in X_test_reduced:
+            classifierResult = classify0(j, X_train_reduced, y_train, k)
+            y_pred.append(classifierResult)
+            print "processed: %d/%d" % (len(y_pred), len(y_test))
+        # y_pred = clf.predict(X_test_reduced)
+
+        values_dict[k] = y_pred
+
+        print classification_report(y_test, y_pred)
+        print("Confusion matrix:\n%s" % metrics.confusion_matrix(y_test, y_pred))
+
+        acc = accuracy_score(y_test, y_pred)
+        accuracy_dict[k] = acc
+
+        print("\n")
+        print("Accuracy:%f" % (acc * 100))
+
+        print("Runtime:")
+        print round((time.time() - start_time), 2), " seconds"
+
+    max_key = max(accuracy_dict, key=accuracy_dict.get)
+
+    with open('KNN_results.csv', 'w')as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerow(["ImageID", "Label"])
+        i = 1
+        for v in values_dict[max_key]:
+            writer.writerow([i, v])
+            i += 1
+
+if __name__ == '__main__':
+    ## test handwriting
+    # handwritingClassTest()
+
+    ## test digit recognizer using knn in book
+    # digitRecognizerTest()
+
+    ## test digit recognizer fast using knn in sklearn
+    # digitRecognizerTestFast()
+
+    ## test digit recognizer for kaggle
+    digitRecognizerForKaggle()
